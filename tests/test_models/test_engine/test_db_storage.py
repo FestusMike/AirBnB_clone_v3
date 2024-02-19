@@ -18,6 +18,7 @@ import json
 import os
 import pep8
 import unittest
+
 DBStorage = db_storage.DBStorage
 classes = {"Amenity": Amenity, "City": City, "Place": Place,
            "Review": Review, "State": State, "User": User}
@@ -69,6 +70,10 @@ test_db_storage.py'])
 
 
 class TestFileStorage(unittest.TestCase):
+    def setUp(self):
+        """Set up the test environment"""
+        self.storage = DBStorage()
+
     """Test the FileStorage class"""
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_all_returns_dict(self):
@@ -86,3 +91,37 @@ class TestFileStorage(unittest.TestCase):
     @unittest.skipIf(models.storage_t != 'db', "not testing db storage")
     def test_save(self):
         """Test that save properly saves objects to file.json"""
+
+    def test_get(self):
+        """Test the get method"""
+        state = State(name="California")
+        state.save()
+        retrieved_state = self.storage.get(State, state.id)
+        self.assertEqual(retrieved_state, state)
+
+        non_existent_state = self.storage.get(State, "non_existent_id")
+        self.assertIsNone(non_existent_state)
+
+    def test_count(self):
+        """Test the count method"""
+        state1 = State(name="New York")
+        state2 = State(name="Texas")
+        city1 = City(name="New York City", state_id=state1.id)
+        city2 = City(name="Houston", state_id=state2.id)
+        state1.save()
+        state2.save()
+        city1.save()
+        city2.save()
+
+        state_count = self.storage.count(State)
+        self.assertEqual(state_count, 2)
+
+        city_count = self.storage.count(City)
+        self.assertEqual(city_count, 2)
+
+        all_objects_count = self.storage.count()
+        self.assertEqual(all_objects_count, 4)
+
+
+if __name__ == '__main__':
+    unittest.main()

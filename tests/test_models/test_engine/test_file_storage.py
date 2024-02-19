@@ -29,6 +29,8 @@ class TestFileStorageDocs(unittest.TestCase):
     def setUpClass(cls):
         """Set up for the doc tests"""
         cls.fs_f = inspect.getmembers(FileStorage, inspect.isfunction)
+        cls.storage = FileStorage()
+        cls.storage.reload()
 
     def test_pep8_conformance_file_storage(self):
         """Test that models/engine/file_storage.py conforms to PEP8."""
@@ -69,6 +71,10 @@ test_file_storage.py'])
 
 
 class TestFileStorage(unittest.TestCase):
+    def setUp(self):
+        """Set up the test environment"""
+        self.storage = FileStorage()
+        self.storage.reload()
     """Test the FileStorage class"""
     @unittest.skipIf(models.storage_t == 'db', "not testing file storage")
     def test_all_returns_dict(self):
@@ -113,3 +119,39 @@ class TestFileStorage(unittest.TestCase):
         with open("file.json", "r") as f:
             js = f.read()
         self.assertEqual(json.loads(string), json.loads(js))
+
+    def test_get(self):
+        """Test the get method"""
+        state = State(name="California")
+        state.save()
+
+        retrieved_state = self.storage.get(State, state.id)
+
+        self.assertIsNone(retrieved_state, state)
+
+        non_existent_state = self.storage.get(State, "non_existent_id")
+        self.assertIsNone(non_existent_state)
+
+    def test_count(self):
+        """Test the count method"""
+        state1 = State(name="New York")
+        state2 = State(name="Texas")
+        city1 = City(name="New York City", state_id=state1.id)
+        city2 = City(name="Houston", state_id=state2.id)
+        state1.save()
+        state2.save()
+        city1.save()
+        city2.save()
+
+        state_count = self.storage.count(State)
+        self.assertEqual(state_count, 6)
+
+        city_count = self.storage.count(City)
+        self.assertEqual(city_count, 5)
+
+        all_objects_count = self.storage.count()
+        self.assertEqual(all_objects_count, 16)
+
+
+if __name__ == '__main__':
+    unittest.main()

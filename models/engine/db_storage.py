@@ -13,6 +13,7 @@ from models.state import State
 from models.user import User
 from os import getenv
 import sqlalchemy
+from sqlalchemy import func
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -39,6 +40,9 @@ class DBStorage:
                                              HBNB_MYSQL_DB))
         if HBNB_ENV == "test":
             Base.metadata.drop_all(self.__engine)
+        Session = scoped_session(sessionmaker(bind=self.__engine,
+                                              expire_on_commit=False))
+        self.__session = Session()
 
     def all(self, cls=None):
         """query on the current database session"""
@@ -74,3 +78,15 @@ class DBStorage:
     def close(self):
         """call remove() method on the private session attribute"""
         self.__session.remove()
+
+    def get(self, cls, id):
+        """Retrieve one object by class and ID"""
+        return self.__session.query(cls).filter_by(id=id).first()
+
+    def count(self, cls=None):
+        """Count the number of objects in storage."""
+        if id or cls:
+            count = self.__session.query(func.count(cls.id)).scalar()
+        else:
+            count = sum(1 for _ in self.all())
+        return count
